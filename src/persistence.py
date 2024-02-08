@@ -18,6 +18,8 @@ def __min_birth_max_death(persistence, band_boot=0.):
     :returns: (float, float) -- (min_birth, max_death).
     """
     # Look for minimum birth date and maximum death date for plot optimisation
+    if len(persistence) == 0:
+        return (0.0,1.0)
     max_death = 0
     min_birth = persistence[0][1][0]
     for interval in reversed(persistence):

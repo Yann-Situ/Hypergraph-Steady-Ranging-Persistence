@@ -18,6 +18,7 @@ except ImportError:
 
 import matplotlib.pyplot as plt
 from numpy import inf as INFINITY
+from numpy import linspace as linspace
 
 from persistence import CornerPoint
 from persistence import PersistenceDiagram
@@ -37,12 +38,16 @@ class HyperGraphFiltration:
         dictionary of weights of nodes. No weight for an node is considered as
         -inf.
     """
-    def __init__(self, hnx_hypergraph = None, node_weights = {}, edge_weights = {}):
+    def __init__(self, hnx_hypergraph = None, node_weights = {}, edge_weights = {}, time_range = [0.0]):
+        print("init HyperGraphFiltration")
         if hnx_hypergraph is not None:
             self.H = hnx_hypergraph
             self.edge_weights = edge_weights
             self.node_weights = node_weights
-            self.time_range = sorted(set(list(edge_weights.values()) + list(node_weights.values())))
+            if time_range == []:
+                self.time_range = [0.0]
+            else:
+                self.time_range = time_range
         else:
             raise ValueError("Specify hypergraph as a hypernetworkx hypergraph")
 
@@ -51,7 +56,10 @@ class HyperGraphFiltration:
     #     """
     #     return func(np.asarray(list(nx.get_edge_attributes(sub_hypergraph,
     #                                                        'weight').values())))
-
+    def compute_time_range_from_weights(self, nb_sample = None):
+        self.time_range = sorted(set(list(self.edge_weights.values()) + list(self.node_weights.values())))
+        if nb_sample != None and nb_sample > 0 and nb_sample < len(self.time_range):
+            self.time_range = [self.time_range[int(round(i))] for i in linspace(0, len(self.time_range)-1, nb_sample)]
 
     def get_sub_hypergraph_edges(self, time):
         """Returns the edges of self.H part of the sublevel set defined by time
@@ -118,11 +126,14 @@ class HyperGraphFiltration:
             _,_ = self.ranging_pd.get_nth_widest_gap(n = gap_number)
             self.ranging_gap_number = gap_numb
 
-    def plot_filtration(self, nb_plot = None):
+    def plot_filtration(self, nb_plot = None, collapse = False):
         """Plots all the sub hypergraphs of self.H given by considering the sublevel
         sets of the function defined on the weighted edges and nodes
         """
-        positions = hnx.drawing.rubber_band.layout_node_link(self.H)
+        if collapse:
+            positions = hnx.drawing.rubber_band.layout_node_link(self.H.collapse_nodes_and_edges())
+        else:
+            positions = hnx.drawing.rubber_band.layout_node_link(self.H)
         n = len(self.time_range)
         if nb_plot == None:
             nb_plot = n
@@ -137,15 +148,15 @@ class HyperGraphFiltration:
         for i in range(nb_plot-1):
             t = self.time_range[int(i*(n-1.0)/(nb_plot-1.0))]
             sub_H = self.get_sub_hypergraph(t)
-            draw_sub_hypergraph(sub_H, plot_weights = True, pos = positions, ax = self.ax_arr[i],
+            draw_sub_hypergraph(sub_H, collapse = collapse, pos = positions, ax = self.ax_arr[i],
                         title = "t="+str(t)+" sublevel")
         # print last step
         t = self.time_range[-1]
         sub_H = self.get_sub_hypergraph(t)
-        draw_sub_hypergraph(sub_H, plot_weights = True, pos = positions, ax = self.ax_arr[-1],
+        draw_sub_hypergraph(sub_H, collapse = collapse, pos = positions, ax = self.ax_arr[-1],
                     title = "t="+str(t)+" sublevel")
 
-def draw_sub_hypergraph(hypergraph, plot_weights = True, pos = None, ax = None, title = None):
+def draw_sub_hypergraph(hypergraph, collapse = False, pos = None, ax = None, title = None):
     """Plots a sub hypergraph using hypernetx wrappers
 
     Parameters
@@ -164,4 +175,7 @@ def draw_sub_hypergraph(hypergraph, plot_weights = True, pos = None, ax = None, 
         exit()
     if title is not None:
         ax.set_title(title)
-    hnx.draw(hypergraph, pos = pos, ax = ax)
+    if collapse:
+        hnx.draw(hypergraph.collapse_nodes_and_edges(),with_node_counts=True,with_edge_counts=True, pos = pos, ax = ax)
+    else:
+        hnx.draw(hypergraph, pos = pos, ax = ax)
