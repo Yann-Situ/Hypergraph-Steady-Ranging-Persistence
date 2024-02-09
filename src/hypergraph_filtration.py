@@ -66,6 +66,13 @@ class HyperGraphFiltration:
         """
         return [edge for edge in self.H.edges
             if (not edge in self.edge_weights or self.edge_weights[edge] <= time)]
+
+    def get_sup_hypergraph_edges(self, time):
+        """Returns the edges of self.H part of the suplevel set defined by time
+        """
+        return [edge for edge in self.H.edges
+            if (not edge in self.edge_weights or self.edge_weights[edge] > time)]
+
     def get_sub_hypergraph_nodes(self, time):
         """Returns the nodes of self.H part of the sublevel set defined by time
         """
@@ -78,7 +85,7 @@ class HyperGraphFiltration:
         sub_hypergraph.
         """
         return self.H.restrict_to_nodes(self.get_sub_hypergraph_nodes(time)) \
-            .restrict_to_edges(self.get_sub_hypergraph_edges(time))
+            .remove_edges(self.get_sup_hypergraph_edges(time))
 
     def compute_feature_steady_persistence(self, feature, above_max_diagonal_gap=False, gap_number=0, display_progress=False):
         """Compute steady persistence of a feature. Recall that an object
@@ -126,7 +133,8 @@ class HyperGraphFiltration:
             _,_ = self.ranging_pd.get_nth_widest_gap(n = gap_number)
             self.ranging_gap_number = gap_numb
 
-    def plot_filtration(self, nb_plot = None, collapse = False):
+    def plot_filtration(self, nb_plot = None, collapse = False,
+            with_node_labels = True, with_edge_labels = True):
         """Plots all the sub hypergraphs of self.H given by considering the sublevel
         sets of the function defined on the weighted edges and nodes
         """
@@ -143,20 +151,25 @@ class HyperGraphFiltration:
                 k = 4
             if nb_plot % 5 == 0:
                 k = 5
+        if nb_plot == 4:
+            k = 2
         fig, self.ax_arr = plt.subplots(int( (nb_plot-1)/k)+1,k)
         self.ax_arr = self.ax_arr.ravel()
         for i in range(nb_plot-1):
             t = self.time_range[int(i*(n-1.0)/(nb_plot-1.0))]
             sub_H = self.get_sub_hypergraph(t)
             draw_sub_hypergraph(sub_H, collapse = collapse, pos = positions, ax = self.ax_arr[i],
-                        title = "t="+str(t)+" sublevel")
+                        title = "t="+str(t)+" sublevel",
+                        with_node_labels = with_node_labels, with_edge_labels = with_edge_labels)
         # print last step
         t = self.time_range[-1]
         sub_H = self.get_sub_hypergraph(t)
         draw_sub_hypergraph(sub_H, collapse = collapse, pos = positions, ax = self.ax_arr[-1],
-                    title = "t="+str(t)+" sublevel")
+                    title = "t="+str(t),
+                    with_node_labels = with_node_labels, with_edge_labels = with_edge_labels)
 
-def draw_sub_hypergraph(hypergraph, collapse = False, pos = None, ax = None, title = None):
+def draw_sub_hypergraph(hypergraph, collapse = False, pos = None, ax = None,
+        title = None, with_node_labels = True, with_edge_labels = True):
     """Plots a sub hypergraph using hypernetx wrappers
 
     Parameters
@@ -176,6 +189,10 @@ def draw_sub_hypergraph(hypergraph, collapse = False, pos = None, ax = None, tit
     if title is not None:
         ax.set_title(title)
     if collapse:
-        hnx.draw(hypergraph.collapse_nodes_and_edges(),with_node_counts=True,with_edge_counts=True, pos = pos, ax = ax)
+        hnx.draw(hypergraph.collapse_nodes_and_edges(),
+            with_node_counts=True,with_edge_counts=True,
+            pos = pos, ax = ax,
+            with_node_labels = with_node_labels, with_edge_labels = with_edge_labels)
     else:
-        hnx.draw(hypergraph, pos = pos, ax = ax)
+        hnx.draw(hypergraph, pos = pos, ax = ax,
+            with_node_labels = with_node_labels, with_edge_labels = with_edge_labels)

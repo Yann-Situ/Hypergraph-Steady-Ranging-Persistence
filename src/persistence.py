@@ -61,7 +61,8 @@ def show_palette_values(alpha=0.6):
 
 def plot_persistence_diagram(persistence=[], persistence_file='', alpha=0.6,
                              band_boot=0., max_plots=0, cornerpoints = None,
-                             coloring = False, labeling=False, legending=False):
+                             coloring = False, labeling=False, legending=False,
+                             title = ""):
     """This function plots the persistence diagram with an optional confidence band.
 
     :param persistence: The persistence to plot.
@@ -163,7 +164,7 @@ def plot_persistence_diagram(persistence=[], persistence_file='', alpha=0.6,
                      color = color, alpha = alpha)
         ind = ind + 1
 
-    plt.title('Persistence diagram')
+    plt.title('Persistence diagram - '+title)
     plt.xlabel('Birth')
     plt.ylabel('Death')
     if legending: # modified by OneC2
@@ -264,7 +265,8 @@ class PersistenceDiagram(object):
                                     for c in self.cornerpoints]
 
     def plot_gudhi(self, ax_handle, cornerpoints=None, persistence_to_plot = None,
-                   coloring = False, labeling=False, legending=False):
+                   coloring = False, labeling=False, legending=False,
+                   title = ""):
         """plots the persistence diagram in ax_handle
 
         coloring : bool
@@ -277,10 +279,9 @@ class PersistenceDiagram(object):
         cornerpoints = cornerpoints or self.cornerpoints
         persistence_to_plot = persistence_to_plot or self.persistence_to_plot
         ax_handle = plot_persistence_diagram(persistence_to_plot,
-                                             cornerpoints = cornerpoints,
-                                             coloring = coloring,
-                                             labeling=labeling,
-                                             legending=legending)
+            cornerpoints = cornerpoints,
+            coloring = coloring, labeling=labeling, legending=legending,
+            title = title)
         return ax_handle
 
     def get_cornerpoint_objects(self):

@@ -29,38 +29,41 @@ def test_hypernet():
     H = hnx.Hypergraph(scenes, cell_weight_col='w', sort=False)
 
     node_weights = {}
+    edge_weights = {}
     i = 0
     for node in H.nodes:
         node_weights[node] = weight_test(i)
         i = i+1
-    edge_weights = {}
 
-    # i = 0
-    # for edge in H.edges:
-    #     edge_weights[edge] = i
-    #     i = i+1
+    i = 0
+    for edge in H.edges:
+        edge_weights[edge] = weight_test(i*2.3)
+        i = i+1
+    print(edge_weights)
     # for edge in H.edges:
     #     print(set(H.incidence_dict[edge]))
 
     HGF = HyperGraphFiltration(H, node_weights, edge_weights)
+    HGF.compute_time_range_from_weights()
     print(HGF.time_range)
-    compute_originality_values(H)
     # H5 = HGF.get_sub_hypergraph(10)
-    # plt.subplots(figsize=(5,5))
-    # #hnx.draw(H)
+    # fig, ax_handle = plt.subplots()
+    # hnx.draw(HGF.H)
+    # fig, ax_handle = plt.subplots()
+    # hnx.draw(HGF.H.remove_edges([3,4]))
     # hnx.draw(H5)
     HGF.plot_filtration()
 
     #HGF.compute_feature_steady_persistence(size_3_feature, display_progress=True)
-    HGF.compute_feature_steady_persistence(originality_feature, display_progress=True)
-    fig, ax_handle = plt.subplots()
-    HGF.steady_pd.plot_gudhi(ax_handle, labeling=True)
-    HGF.compute_feature_steady_persistence(local_max_size_feature, display_progress=True)
-    fig, ax_handle = plt.subplots()
-    HGF.steady_pd.plot_gudhi(ax_handle, labeling=True)
-    HGF.compute_feature_steady_persistence(strict_hyperhub_feature, display_progress=True)
-    fig, ax_handle = plt.subplots()
-    HGF.steady_pd.plot_gudhi(ax_handle, labeling=True)
+    # HGF.compute_feature_steady_persistence(originality_feature, display_progress=True)
+    # fig, ax_handle = plt.subplots()
+    # HGF.steady_pd.plot_gudhi(ax_handle, labeling=True)
+    # HGF.compute_feature_steady_persistence(local_max_size_feature, display_progress=True)
+    # fig, ax_handle = plt.subplots()
+    # HGF.steady_pd.plot_gudhi(ax_handle, labeling=True)
+    # HGF.compute_feature_steady_persistence(strict_hyperhub_feature, display_progress=True)
+    # fig, ax_handle = plt.subplots()
+    # HGF.steady_pd.plot_gudhi(ax_handle, labeling=True)
     plt.show()
 
 ################################################################################
@@ -131,7 +134,7 @@ def strict_hyperhub_feature(H):
                     if l1 == l2:
                         not_max_edges.add(e2)
                     break
-                    
+
             if is_e1_max:
                 r.add(e1)
     return r
