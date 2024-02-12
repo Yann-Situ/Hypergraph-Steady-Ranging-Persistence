@@ -63,31 +63,44 @@ class HyperGraphFiltration:
 
     def get_sub_hypergraph_edges(self, time):
         """Returns the edges of self.H part of the sublevel set defined by time
+        Warning: it also returns the edges that do not have weights.
         """
         return [edge for edge in self.H.edges
             if (not edge in self.edge_weights or self.edge_weights[edge] <= time)]
 
     def get_sup_hypergraph_edges(self, time):
         """Returns the edges of self.H part of the suplevel set defined by time
+        Warning: it also returns the edges that do not have weights.
         """
         return [edge for edge in self.H.edges
             if (not edge in self.edge_weights or self.edge_weights[edge] > time)]
 
     def get_sub_hypergraph_nodes(self, time):
-        """Returns the nodes of self.H part of the sublevel set defined by time
+        """Returns the nodes of self.H part of the sublevel set defined by time.
+        Warning: it also returns the nodes that do not have weights.
         """
         return [node for node in self.H.nodes
             if (not node in self.node_weights or self.node_weights[node] <= time)]
 
-    def get_sub_hypergraph(self, time):
-        """Returns the sub_hypergraph defined by edges. Once the filtration is
-        generated we are only interested in the 'hubbiness' of a
-        sub_hypergraph.
+    def get_sup_hypergraph_nodes(self, time):
+        """Returns the nodes of self.H part of the suplevel set defined by time.
+        Warning: it also returns the nodes that do not have weights.
         """
-        return self.H.restrict_to_nodes(self.get_sub_hypergraph_nodes(time)) \
-            .remove_edges(self.get_sup_hypergraph_edges(time))
+        return [node for node in self.H.nodes
+            if (not node in self.node_weights or self.node_weights[node] > time)]
 
-    def compute_feature_steady_persistence(self, feature, above_max_diagonal_gap=False, gap_number=0, display_progress=False):
+    def get_sub_hypergraph(self, time, dual=False):
+        """Returns the sub_hypergraph at time. If dual, returns the dual graph.
+        """
+        if dual:
+            return self.H.restrict_to_nodes(self.get_sub_hypergraph_nodes(time)) \
+                .remove_edges(self.get_sup_hypergraph_edges(time)).dual()
+        else:
+            return self.H.restrict_to_nodes(self.get_sub_hypergraph_nodes(time)) \
+                .remove_edges(self.get_sup_hypergraph_edges(time))
+
+    def compute_feature_steady_persistence(self, feature, above_max_diagonal_gap=False,
+            gap_number=0, display_progress=False, dual=False):
         """Compute steady persistence of a feature. Recall that an object
         is steady if it lives through consecutive sublevel sets of
         the filtration induced by the weights of the hupergraph.
@@ -95,9 +108,9 @@ class HyperGraphFiltration:
         # feature should be a function that takes a sub-hypergraph
         # (hypergraph-filtered) and gives the set of its featured sets
         if TQDM_FOUND and display_progress:
-            self.feature_sets = [feature(self.get_sub_hypergraph(t)) for t in tqdm(self.time_range)]
+            self.feature_sets = [feature(self.get_sub_hypergraph(t, dual=dual)) for t in tqdm(self.time_range)]
         else:
-            self.feature_sets = [feature(self.get_sub_hypergraph(t)) for t in self.time_range]
+            self.feature_sets = [feature(self.get_sub_hypergraph(t, dual=dual)) for t in self.time_range]
         # compute cornerpoints:
         self.steady_cornerpoints = []
         current_feature_set = {} # dictionary
@@ -133,15 +146,24 @@ class HyperGraphFiltration:
             _,_ = self.ranging_pd.get_nth_widest_gap(n = gap_number)
             self.ranging_gap_number = gap_numb
 
-    def plot_filtration(self, nb_plot = None, collapse = False,
+    def plot_filtration(self, nb_plot = None, dual = False, collapse = False,
             with_node_labels = True, with_edge_labels = True):
         """Plots all the sub hypergraphs of self.H given by considering the sublevel
         sets of the function defined on the weighted edges and nodes
         """
         if collapse:
-            positions = hnx.drawing.rubber_band.layout_node_link(self.H.collapse_nodes_and_edges())
+            if dual:
+                positions = hnx.drawing.rubber_band.layout_node_link(self.H.dual().collapse_nodes_and_edges())
+            else:
+                positions = hnx.drawing.rubber_band.layout_node_link(self.H.collapse_nodes_and_edges())
         else:
-            positions = hnx.drawing.rubber_band.layout_node_link(self.H)
+            if dual:
+                positions = hnx.drawing.rubber_band.layout_node_link(self.H.dual())
+            else:
+                positions = hnx.drawing.rubber_band.layout_node_link(self.H)
+        for node, posi in positions.items():
+            positions[node] = 5.0*posi
+
         n = len(self.time_range)
         if nb_plot == None:
             nb_plot = n
@@ -157,13 +179,13 @@ class HyperGraphFiltration:
         self.ax_arr = self.ax_arr.ravel()
         for i in range(nb_plot-1):
             t = self.time_range[int(i*(n-1.0)/(nb_plot-1.0))]
-            sub_H = self.get_sub_hypergraph(t)
+            sub_H = self.get_sub_hypergraph(t, dual=dual)
             draw_sub_hypergraph(sub_H, collapse = collapse, pos = positions, ax = self.ax_arr[i],
                         title = "t="+str(t)+" sublevel",
                         with_node_labels = with_node_labels, with_edge_labels = with_edge_labels)
         # print last step
         t = self.time_range[-1]
-        sub_H = self.get_sub_hypergraph(t)
+        sub_H = self.get_sub_hypergraph(t, dual=dual)
         draw_sub_hypergraph(sub_H, collapse = collapse, pos = positions, ax = self.ax_arr[-1],
                     title = "t="+str(t),
                     with_node_labels = with_node_labels, with_edge_labels = with_edge_labels)

@@ -59,7 +59,7 @@ def show_palette_values(alpha=0.6):
     plt.title('Dimension palette values')
     return plt
 
-def plot_persistence_diagram(persistence=[], persistence_file='', alpha=0.6,
+def plot_persistence_diagram(persistence=[], persistence_file='', ax=None, alpha=0.6,
                              band_boot=0., max_plots=0, cornerpoints = None,
                              coloring = False, labeling=False, legending=False,
                              title = ""):
@@ -89,6 +89,9 @@ def plot_persistence_diagram(persistence=[], persistence_file='', alpha=0.6,
             print("file " + persistence_file + " not found.")
             return None
 
+    if ax is None:
+        fig, ax = plt.subplots()
+
     if max_plots > 0 and max_plots < len(persistence):
         # Sort by life time, then takes only the max_plots elements
         persistence = sorted(persistence, key=lambda life_time:
@@ -101,13 +104,13 @@ def plot_persistence_diagram(persistence=[], persistence_file='', alpha=0.6,
     # readable
     infinity = max_death + delta
     axis_start = min_birth - delta
-    plt.plot([axis_start,infinity],[axis_start, infinity], color='k',
+    ax.plot([axis_start,infinity],[axis_start, infinity], color='k',
              alpha=alpha)
-    plt.axhline(infinity,linewidth=1.0, color='k', alpha=alpha)
-    plt.text(axis_start, infinity, r'$\infty$', color='k', alpha=alpha)
+    ax.axhline(infinity,linewidth=1.0, color='k', alpha=alpha)
+    ax.text(axis_start, infinity, r'$\infty$', color='k', alpha=alpha)
     # bootstrap band
     if band_boot > 0.:
-        plt.fill_between(x, x, x+band_boot, alpha=alpha, facecolor='red')
+        ax.fill_between(x, x, x+band_boot, alpha=alpha, facecolor='red')
     if cornerpoints is not None:
         reversed_cornerpoints = reversed(cornerpoints)
     else:
@@ -133,18 +136,18 @@ def plot_persistence_diagram(persistence=[], persistence_file='', alpha=0.6,
             print("finite death")
             print("interval: ", interval[1][0], interval[1][1])
 
-            plt.plot(interval[1][0], interval[1][1], alpha=alpha,
+            ax.plot(interval[1][0], interval[1][1], alpha=alpha,
                         color = color, label=label, marker='o')
             if labeling and not label is None:  # labeling added by OneC2:
-                plt.annotate(label, # this is the text
+                ax.annotate(label, # this is the text
                     (interval[1][0],interval[1][1]), # these are the coordinates to position the label
                     textcoords="offset points", # how to position the text
-                    xytext=(0,10), # distance from text to points (x,y)
+                    xytext=(-2,5), # distance from text to points (x,y)
                     ha='center') # horizontal alignment can be left, right or center
-            plt.plot([interval[1][0],interval[1][0]],[interval[1][1], interval[1][0]],
+            ax.plot([interval[1][0],interval[1][0]],[interval[1][1], interval[1][0]],
                      color = color, alpha = alpha/2,
                      linestyle="dashed")
-            plt.plot([interval[1][0],interval[1][1]],[interval[1][1], interval[1][1]],
+            ax.plot([interval[1][0],interval[1][1]],[interval[1][1], interval[1][1]],
                      color = color, alpha = alpha/2,
                      linestyle="dashed")
 
@@ -152,26 +155,26 @@ def plot_persistence_diagram(persistence=[], persistence_file='', alpha=0.6,
             print("infinte death")
             print("interval: ", interval[1][0], infinity)
 
-            plt.plot(interval[1][0], infinity, alpha=alpha,
+            ax.plot(interval[1][0], infinity, alpha=alpha,
                         color = color, label=label, marker='o')
             if labeling and not label is None:  # labeling added by OneC2:
-                plt.annotate(label, # this is the text
+                ax.annotate(label, # this is the text
                     (interval[1][0],infinity), # these are the coordinates to position the label
                     textcoords="offset points", # how to position the text
-                    xytext=(0,10), # distance from text to points (x,y)
+                    xytext=(-2,5), # distance from text to points (x,y)
                     ha='center') # horizontal alignment can be left, right or center
-            plt.plot([interval[1][0],interval[1][0]],[interval[1][0], infinity],
+            ax.plot([interval[1][0],interval[1][0]],[interval[1][0], infinity],
                      color = color, alpha = alpha)
         ind = ind + 1
 
-    plt.title('Persistence diagram - '+title)
-    plt.xlabel('Birth')
-    plt.ylabel('Death')
+    ax.set_title('Persistence diagram - '+title)
+    ax.set_xlabel('Birth')
+    ax.set_ylabel('Death')
     if legending: # modified by OneC2
-        plt.legend()
+        ax.legend()
     # Ends plot on infinity value and starts a little bit before min_birth
-    plt.axis([axis_start, infinity, axis_start, infinity + delta])
-    return plt
+    ax.axis([axis_start, infinity, axis_start, infinity + delta])
+    return ax
 
 ###############################################################################
 ## PERSISTENCE_DIAGRAM
@@ -279,7 +282,7 @@ class PersistenceDiagram(object):
         cornerpoints = cornerpoints or self.cornerpoints
         persistence_to_plot = persistence_to_plot or self.persistence_to_plot
         ax_handle = plot_persistence_diagram(persistence_to_plot,
-            cornerpoints = cornerpoints,
+            cornerpoints = cornerpoints, ax = ax_handle,
             coloring = coloring, labeling=labeling, legending=legending,
             title = title)
         return ax_handle
