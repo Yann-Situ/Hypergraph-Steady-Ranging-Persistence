@@ -134,6 +134,21 @@ def compute_originality_values(H):
         max_intersections[e] = 1.0 - n/(1.0*H.size(e))
     return max_intersections
 
+def compute_originality_values_loose(H):
+    sum_intersections = {edge : 0 for edge in H.edges}
+    processed_edge = set()
+    for edge in H.edges:
+        edge_nodes = set(H.incidence_dict[edge])
+        processed_edge.add(edge)
+        for neighbor in set(H.edge_neighbors(edge)).difference(processed_edge):
+            d = len(edge_nodes.intersection(H.incidence_dict[neighbor]))
+            sum_intersections[edge] += d
+            sum_intersections[neighbor] += d
+    #print(max_intersections)
+    for e, n in sum_intersections.items():
+        sum_intersections[e] = 1.0 - n/(len(H.edge_neighbors(e)))*H.size(e))
+    return sum_intersections
+
 def originality_feature(H, t = 0.5):
     originalities = compute_originality_values(H)
     return {e for e, o in originalities.items() if o > t}

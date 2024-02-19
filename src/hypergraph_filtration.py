@@ -147,22 +147,33 @@ class HyperGraphFiltration:
             self.ranging_gap_number = gap_numb
 
     def plot_filtration(self, nb_plot = None, dual = False, collapse = False,
-            with_node_labels = True, with_edge_labels = True):
+            with_node_labels = True, with_edge_labels = True, pos = None,
+            edges_kwargs={}, nodes_kwargs={},
+            node_labels_kwargs={}, edge_labels_kwargs={}):
         """Plots all the sub hypergraphs of self.H given by considering the sublevel
         sets of the function defined on the weighted edges and nodes
         """
-        if collapse:
-            if dual:
-                positions = hnx.drawing.rubber_band.layout_node_link(self.H.dual().collapse_nodes_and_edges())
+        if pos is None:
+            if collapse:
+                if dual:
+                    pos = hnx.drawing.rubber_band.layout_node_link(self.H.dual().collapse_nodes_and_edges())
+                else:
+                    pos = hnx.drawing.rubber_band.layout_node_link(self.H.collapse_nodes_and_edges())
             else:
-                positions = hnx.drawing.rubber_band.layout_node_link(self.H.collapse_nodes_and_edges())
-        else:
-            if dual:
-                positions = hnx.drawing.rubber_band.layout_node_link(self.H.dual())
-            else:
-                positions = hnx.drawing.rubber_band.layout_node_link(self.H)
-        for node, posi in positions.items():
-            positions[node] = 5.0*posi
+                if dual:
+                    pos = hnx.drawing.rubber_band.layout_node_link(self.H.dual())
+                else:
+                    pos = hnx.drawing.rubber_band.layout_node_link(self.H)
+        # for i, (node, posi) in enumerate(pos.items()):
+        #     print(str(i)+' '+str(node))
+        #     # print(posi)
+        #     pos[node] = [i*1.0, 0.0]
+
+        edgecolors = {}
+        temp_colors = [plt.cm.tab10(i % 10) for i in range(len(self.H.edges))]
+        for i, edge in enumerate(self.H.edges):
+            edgecolors[edge] = temp_colors[i]
+        edges_kwargs['edgecolors'] = edgecolors
 
         n = len(self.time_range)
         if nb_plot == None:
@@ -177,21 +188,23 @@ class HyperGraphFiltration:
             k = 2
         fig, self.ax_arr = plt.subplots(int( (nb_plot-1)/k)+1,k)
         self.ax_arr = self.ax_arr.ravel()
-        for i in range(nb_plot-1):
-            t = self.time_range[int(i*(n-1.0)/(nb_plot-1.0))]
+        for i in range(nb_plot):
+            if i == nb_plot-1:
+                t = self.time_range[-1]
+            else:
+                t = self.time_range[int(i*(n-1.0)/(nb_plot-1.0))]
             sub_H = self.get_sub_hypergraph(t, dual=dual)
-            draw_sub_hypergraph(sub_H, collapse = collapse, pos = positions, ax = self.ax_arr[i],
-                        title = "t="+str(t)+" sublevel",
-                        with_node_labels = with_node_labels, with_edge_labels = with_edge_labels)
-        # print last step
-        t = self.time_range[-1]
-        sub_H = self.get_sub_hypergraph(t, dual=dual)
-        draw_sub_hypergraph(sub_H, collapse = collapse, pos = positions, ax = self.ax_arr[-1],
-                    title = "t="+str(t),
-                    with_node_labels = with_node_labels, with_edge_labels = with_edge_labels)
+            draw_sub_hypergraph(sub_H, collapse = collapse, pos = pos, ax = self.ax_arr[i],
+                        title = '',#"t="+str(t),
+                        with_node_labels = with_node_labels,
+                        with_edge_labels = with_edge_labels,
+                        edges_kwargs=edges_kwargs, nodes_kwargs=nodes_kwargs,
+                        node_labels_kwargs=node_labels_kwargs, edge_labels_kwargs=edge_labels_kwargs)
 
 def draw_sub_hypergraph(hypergraph, collapse = False, pos = None, ax = None,
-        title = None, with_node_labels = True, with_edge_labels = True):
+        title = None, with_node_labels = True, with_edge_labels = True,
+        edges_kwargs={}, nodes_kwargs={},
+        node_labels_kwargs={}, edge_labels_kwargs={}):
     """Plots a sub hypergraph using hypernetx wrappers
 
     Parameters
@@ -210,11 +223,18 @@ def draw_sub_hypergraph(hypergraph, collapse = False, pos = None, ax = None,
         exit()
     if title is not None:
         ax.set_title(title)
+
     if collapse:
         hnx.draw(hypergraph.collapse_nodes_and_edges(),
             with_node_counts=True,with_edge_counts=True,
             pos = pos, ax = ax,
-            with_node_labels = with_node_labels, with_edge_labels = with_edge_labels)
+            with_node_labels = with_node_labels, with_edge_labels = with_edge_labels,
+            edges_kwargs=edges_kwargs, nodes_kwargs=nodes_kwargs,
+            node_labels_kwargs=node_labels_kwargs, edge_labels_kwargs=edge_labels_kwargs,
+            node_radius = 5,label_alpha = 0.65)
     else:
         hnx.draw(hypergraph, pos = pos, ax = ax,
-            with_node_labels = with_node_labels, with_edge_labels = with_edge_labels)
+            with_node_labels = with_node_labels, with_edge_labels = with_edge_labels,
+            edges_kwargs=edges_kwargs, nodes_kwargs=nodes_kwargs,
+            node_labels_kwargs=node_labels_kwargs, edge_labels_kwargs=edge_labels_kwargs,
+            node_radius = 5,label_alpha = 0.65)
