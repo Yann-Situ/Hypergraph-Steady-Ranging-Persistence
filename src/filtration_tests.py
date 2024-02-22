@@ -13,22 +13,16 @@ import warnings
 warnings.simplefilter('ignore')
 
 H1 = {
-    'e0': {'v0', 'v1', 'v2', 'v3'},
-    'e1': {'v0', 'v1'},
-    'e2': {'v1'}
+    'e': {'v0', 'v1'}
 }
 
 H1_nw = {
     'v0' : 0,
-    'v1' : 0,
-    'v2' : 0,
-    'v3' : 0
+    'v1' : 1
 }
 
 H1_ew = {
-    'e0': 0,
-    'e1': 1,
-    'e2': 2
+    'e': 0
 }
 
 def test_hypernet():
@@ -71,14 +65,14 @@ def test_hypernet():
     #     edge_labels_kwargs=edge_labels_kwargs)
     #
     # fig, ax_handle = plt.subplots()
-    # hnx.draw(HGF.get_sub_hypergraph(2),node_radius = 5,
+    # hnx.draw(HGF.get_sub_hypergraph(0),node_radius = 5,
     #     pos = pos,
     #     edges_kwargs=edges_kwargs,
     #     node_labels_kwargs=node_labels_kwargs,
     #     edge_labels_kwargs=edge_labels_kwargs)
 
     HGF.plot_filtration(edges_kwargs=edges_kwargs, pos = pos,
-    with_node_labels = False,
+    with_node_labels = True,
     node_labels_kwargs=node_labels_kwargs, edge_labels_kwargs=edge_labels_kwargs)
     plt.show()
 

@@ -69,7 +69,7 @@ def test_hypernet():
     filename = "king-lear_hg-scene-mw.edges.csv"
     # filename = "othello_hg-scene-mw.edges.csv"
     # filename = "richard-iii_hg-scene-mw.edges.csv"
-    #filename = "romeo-and-juliet_hg-scene-mw.edges.csv"
+    # filename = "romeo-and-juliet_hg-scene-mw.edges.csv"
     # filename = "henry-iv-part-2_hg-scene-mw.edges.csv"
     # filename = "hamlet_hg-scene-mw.edges.csv"
     edgedict = build_dict_from_file(directory+filename,
@@ -112,97 +112,6 @@ def test_hypernet():
 
     plt.show()
 
-################################################################################
-
-def size_3_feature(H):
-    r = [edge for edge in H.edges
-        if H.size(edge)==3 or H.size(edge)==2]
-    return r #set(r)
-
-def compute_originality_values(H):
-    max_intersections = {edge : 0 for edge in H.edges}
-    processed_edge = set()
-    for edge in H.edges:
-        edge_nodes = set(H.incidence_dict[edge])
-        processed_edge.add(edge)
-        for neighbor in set(H.edge_neighbors(edge)).difference(processed_edge):
-            d = len(edge_nodes.intersection(H.incidence_dict[neighbor]))
-            max_intersections[edge] = max(d, max_intersections[edge])
-            max_intersections[neighbor] = max(d, max_intersections[neighbor])
-    #print(max_intersections)
-    for e, n in max_intersections.items():
-        max_intersections[e] = 1.0 - n/(1.0*H.size(e))
-    return max_intersections
-
-def compute_originality_values_loose(H):
-    sum_intersections = {edge : 0 for edge in H.edges}
-    processed_edge = set()
-    for edge in H.edges:
-        edge_nodes = set(H.incidence_dict[edge])
-        processed_edge.add(edge)
-        for neighbor in set(H.edge_neighbors(edge)).difference(processed_edge):
-            d = len(edge_nodes.intersection(H.incidence_dict[neighbor]))
-            sum_intersections[edge] += d
-            sum_intersections[neighbor] += d
-    #print(max_intersections)
-    for e, n in sum_intersections.items():
-        sum_intersections[e] = 1.0 - n/(len(H.edge_neighbors(e)))*H.size(e))
-    return sum_intersections
-
-def originality_feature(H, t = 0.5):
-    originalities = compute_originality_values(H)
-    return {e for e, o in originalities.items() if o > t}
-
-def local_max_size_feature(H):
-    not_max_edges = set()
-    r = set()
-    for e1 in H.edges:
-        if not e1 in not_max_edges:
-            is_e1_max = True
-            se1 = H.size(e1)
-            i = 0
-            for e2 in H.edge_neighbors(e1):
-                i = i+1
-                se2 = H.size(e2)
-                if se1 > se2:
-                    not_max_edges.add(e2)
-                elif se1 < se2:
-                    is_e1_max = False
-                    not_max_edges.add(e1)
-                    break
-            if i > 0 and is_e1_max:
-                r.add(e1)
-    return r
-
-def strict_hyperhub_feature(H):
-    neighb = {}
-    lens = {}
-    for e in H.edges:
-        n_e = H.edge_neighbors(e)
-        neighb[e] = n_e
-        lens[e] = len(n_e)
-
-    not_max_edges = set()
-    r = set()
-    for e1 in H.edges:
-        if not e1 in not_max_edges and lens[e1] > 0:
-            is_e1_max = True
-            n_e1 = neighb[e1]
-            l1 = lens[e1]
-            for e2 in n_e1:
-                l2 = lens[e2]
-                if l1 > l2:
-                    not_max_edges.add(e2)
-                else: # l1 <= l2:
-                    is_e1_max = False
-                    not_max_edges.add(e1)
-                    if l1 == l2:
-                        not_max_edges.add(e2)
-                    break
-
-            if is_e1_max:
-                r.add(e1)
-    return r
 ################################################################################
 
 if __name__ == "__main__":
