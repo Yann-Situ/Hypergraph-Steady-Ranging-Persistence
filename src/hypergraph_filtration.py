@@ -118,7 +118,10 @@ class HyperGraphFiltration:
             new_feature_set = self.feature_sets[i]
             for object, birth in current_feature_set.copy().items(): # use copy in order to safely delete items during iteration
                 if object not in new_feature_set:
-                    self.steady_cornerpoints.append(CornerPoint(0, birth, self.time_range[i], label = str(object)))#object.name
+                    self.steady_cornerpoints.append(
+                        CornerPoint(0, birth, self.time_range[i],
+                            label = str(object), object = object
+                        ))
                     current_feature_set.pop(object)
 
             for object in new_feature_set:
@@ -126,9 +129,13 @@ class HyperGraphFiltration:
                     current_feature_set[object] = self.time_range[i]
 
         for object, birth in current_feature_set.items():
-            self.steady_cornerpoints.append(CornerPoint(0, birth, INFINITY, label = str(object)))#object.name
+            self.steady_cornerpoints.append(
+                CornerPoint(0, birth, INFINITY,
+                    label = str(object), object = object
+                ))#object.name
 
-        self.steady_pd = PersistenceDiagram(cornerpoints = self.steady_cornerpoints)
+        self.steady_pd = PersistenceDiagram(cornerpoints = self.steady_cornerpoints,
+            xmax = self.time_range[-1])
         if above_max_diagonal_gap:
             _,_ = self.steady_pd.get_nth_widest_gap(n = gap_number)
             self.steady_gap_number = gap_number
@@ -140,8 +147,22 @@ class HyperGraphFiltration:
         called after calling `self.compute_feature_steady_persistence(...)`
         """
         self.ranging_cornerpoints = []
-        # ... TODO
-        self.ranging_pd = PersistenceDiagram(cornerpoints = self.ranging_cornerpoints)
+        ranging_corner_dict = {}
+        for cp in self.steady_cornerpoints:
+            if cp.object not in ranging_corner_dict:
+                ranging_corner_dict[cp.object] = (cp.birth, cp.death)
+            else:
+                (b,d) = ranging_corner_dict[cp.object]
+                ranging_corner_dict[cp.object] = (min(b,cp.birth) , max(d,cp.death))
+
+        for object, (b,d) in ranging_corner_dict.items():
+            self.ranging_cornerpoints.append(
+                CornerPoint(0, b, d,
+                    label = str(object), object = object
+                ))
+
+        self.ranging_pd = PersistenceDiagram(cornerpoints = self.ranging_cornerpoints,
+            xmax = self.time_range[-1])
         if above_max_diagonal_gap:
             _,_ = self.ranging_pd.get_nth_widest_gap(n = gap_number)
             self.ranging_gap_number = gap_numb
@@ -170,10 +191,17 @@ class HyperGraphFiltration:
         #     pos[node] = [i*1.0, 0.0]
 
         edgecolors = {}
-        temp_colors = [plt.cm.tab10(i % 10) for i in range(len(self.H.edges))]
+        if dual:
+            temp_colors = [plt.cm.tab10(i % 10) for i in range(len(self.H.dual().edges))]
+        else:
+            temp_colors = [plt.cm.tab10(i % 10) for i in range(len(self.H.edges))]
         for i, edge in enumerate(self.H.edges):
             edgecolors[edge] = temp_colors[i]
         edges_kwargs['edgecolors'] = edgecolors
+
+        if dual:
+            edges_kwargs, nodes_kwargs = nodes_kwargs, edges_kwargs
+            edges_labels_kwargs, nodes_labels_kwargs = node_labels_kwargs, edge_labels_kwargs
 
         n = len(self.time_range)
         if nb_plot == None:

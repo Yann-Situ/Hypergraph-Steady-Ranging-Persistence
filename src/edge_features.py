@@ -53,7 +53,7 @@ def max_originality_feature(H, t = 0.5):
     originalities = compute_max_originality_values(H)
     return {e for e, o in originalities.items() if o > t}
 
-def mean_originality_feature(H, t = 0.5):
+def mean_originality_feature(H, t = 0.75):
     """
     Return the set of edges whose mean-originality is greater than t.
     the mean-originality of an edge e is:

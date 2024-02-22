@@ -60,9 +60,10 @@ def show_palette_values(alpha=0.6):
     return plt
 
 def plot_persistence_diagram(persistence=[], persistence_file='', ax=None, alpha=0.6,
-                             band_boot=0., max_plots=0, cornerpoints = None,
-                             coloring = False, labeling=False, legending=False,
-                             title = ""):
+                            xmax=None,
+                            band_boot=0., max_plots=0, cornerpoints = None,
+                            coloring = False, labeling=False, legending=False,
+                            title = ""):
     """This function plots the persistence diagram with an optional confidence band.
 
     :param persistence: The persistence to plot.
@@ -98,6 +99,8 @@ def plot_persistence_diagram(persistence=[], persistence_file='', ax=None, alpha
                              life_time[1][1]-life_time[1][0], reverse=True)[:max_plots]
 
     (min_birth, max_death) = __min_birth_max_death(persistence, band_boot)
+    if not xmax is None:
+        max_death = xmax
     ind = 0
     delta = ((max_death - min_birth) / 10.0)
     # Replace infinity values with max_death + delta for diagram to be more
@@ -117,6 +120,8 @@ def plot_persistence_diagram(persistence=[], persistence_file='', ax=None, alpha
         reversed_cornerpoints = [None] * len(persistence)
 
     # Draw points in loop
+    cp_counts={} # cornerpoint multiplicity, to draw labels above each other:
+    # of type (birth,death):int
     for interval, cp in zip(reversed(persistence), reversed_cornerpoints):
         print("plotting ", interval)
         # modified by OneC2:
@@ -129,42 +134,38 @@ def plot_persistence_diagram(persistence=[], persistence_file='', ax=None, alpha
             label = None
         else:
             label = cp.label
-        print("color: ", color)
+        # print("color: ", color)
         print("label: ", label)
-
-        if float(interval[1][1]) != float('inf'):
-            print("finite death")
-            print("interval: ", interval[1][0], interval[1][1])
-
-            ax.plot(interval[1][0], interval[1][1], alpha=alpha,
-                        color = color, label=label, marker='o')
-            if labeling and not label is None:  # labeling added by OneC2:
-                ax.annotate(label, # this is the text
-                    (interval[1][0],interval[1][1]), # these are the coordinates to position the label
-                    textcoords="offset points", # how to position the text
-                    xytext=(-2,5), # distance from text to points (x,y)
-                    ha='center') # horizontal alignment can be left, right or center
-            ax.plot([interval[1][0],interval[1][0]],[interval[1][1], interval[1][0]],
-                     color = color, alpha = alpha/2,
-                     linestyle="dashed")
-            ax.plot([interval[1][0],interval[1][1]],[interval[1][1], interval[1][1]],
-                     color = color, alpha = alpha/2,
-                     linestyle="dashed")
-
+        (birth,death) = (interval[1][0], interval[1][1])
+        if float(death) == float('inf'):
+            death = infinity
+        if (birth,death) in cp_counts:
+            cp_counts[(birth,death)] += 1
         else:
-            print("infinte death")
-            print("interval: ", interval[1][0], infinity)
+            cp_counts[(birth,death)] = 0
 
-            ax.plot(interval[1][0], infinity, alpha=alpha,
-                        color = color, label=label, marker='o')
-            if labeling and not label is None:  # labeling added by OneC2:
-                ax.annotate(label, # this is the text
-                    (interval[1][0],infinity), # these are the coordinates to position the label
-                    textcoords="offset points", # how to position the text
-                    xytext=(-2,5), # distance from text to points (x,y)
-                    ha='center') # horizontal alignment can be left, right or center
-            ax.plot([interval[1][0],interval[1][0]],[interval[1][0], infinity],
-                     color = color, alpha = alpha)
+        print("interval: ", birth,death)
+        ax.plot(birth,death, alpha=alpha,
+                    color = color, label=label, marker='o')
+        if labeling and not label is None:  # labeling added by OneC2:
+            ax.annotate(label, # this is the text
+                (birth,death), # these are the coordinates to position the label
+                textcoords="offset points", # how to position the text
+                xytext=(-2-2*cp_counts[(birth,death)],5 + 8*cp_counts[(birth,death)]), # distance from text to points (x,y)
+                ha='center') # horizontal alignment can be left, right or center
+
+        if death < infinity:
+            ax.plot([birth,birth],[death, birth],
+                     color = color, alpha = alpha/2,
+                     linestyle="dashed")
+            ax.plot([birth,death],[death, death],
+                     color = color, alpha = alpha/2,
+                 linestyle="dashed")
+        else:
+            ax.plot([birth,birth],[birth, infinity],
+                     color = color, alpha = alpha/2,
+                 linestyle="dashed")
+
         ind = ind + 1
 
     ax.set_title('Persistence diagram - '+title)
@@ -193,15 +194,18 @@ class CornerPoint:
         death of the homological class represented by the cornerpoint
     label : string
         name of the cornerpoint
+    object :
+        the underlying object, or None
     color : string (hex color)
         color of the cornerpoint
     """
-    def __init__(self, k, birth, death, label = None, color=None):
+    def __init__(self, k, birth, death, label = None, object = None, color=None):
         self.k = k
         self.birth = birth if birth <= death else death
         self.death = death if death >= birth else birth
         self.persistence = abs(death - birth)
         self.label = label
+        self.object = object
         self.color = color
         self.above_the_gap = False
 
@@ -248,8 +252,10 @@ class PersistenceDiagram(object):
     cornerpoints : list
         List of tuples of the form (k, (b, d))
     """
-    def __init__(self, cornerpoints = None):
+    def __init__(self, cornerpoints = None, xmin = None, xmax = None):
         self.cornerpoints = cornerpoints
+        self.xmin = xmin
+        self.xmax = xmax
         self.get_cornerpoints_multiset()
         self.get_persistence_from_cornerpoints()
 
@@ -283,6 +289,7 @@ class PersistenceDiagram(object):
         persistence_to_plot = persistence_to_plot or self.persistence_to_plot
         ax_handle = plot_persistence_diagram(persistence_to_plot,
             cornerpoints = cornerpoints, ax = ax_handle,
+            xmax = self.xmax,
             coloring = coloring, labeling=labeling, legending=legending,
             title = title)
         return ax_handle
