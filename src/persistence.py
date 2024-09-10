@@ -123,7 +123,6 @@ def plot_persistence_diagram(persistence=[], persistence_file='', ax=None, alpha
     cp_counts={} # cornerpoint multiplicity, to draw labels above each other:
     # of type (birth,death):int
     for interval, cp in zip(reversed(persistence), reversed_cornerpoints):
-        print("plotting ", interval)
         # modified by OneC2:
         if not coloring or cp is None:
             color = palette[interval[0]]
@@ -134,9 +133,8 @@ def plot_persistence_diagram(persistence=[], persistence_file='', ax=None, alpha
             label = None
         else:
             label = cp.label
-        # print("color: ", color)
-        print("label: ", label)
         (birth,death) = (interval[1][0], interval[1][1])
+        print("plotting ("+str(birth)+","+str(death)+") with label "+str(label))
         if float(death) == float('inf'):
             death = infinity
         if (birth,death) in cp_counts:
@@ -144,7 +142,6 @@ def plot_persistence_diagram(persistence=[], persistence_file='', ax=None, alpha
         else:
             cp_counts[(birth,death)] = 0
 
-        print("interval: ", birth,death)
         ax.plot(birth,death, alpha=alpha,
                     color = color, label=label, marker='o')
         if labeling and not label is None:  # labeling added by OneC2:

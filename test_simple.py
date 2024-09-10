@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from hypergraph_filtration import HyperGraphFiltration
-import edge_features as feat
+from src.hypergraph_filtration import HyperGraphFiltration
+import src.edge_features as feat
 
 try:
     import hypernetx as hnx

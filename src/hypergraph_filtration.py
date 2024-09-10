@@ -20,8 +20,8 @@ import matplotlib.pyplot as plt
 from numpy import inf as INFINITY
 from numpy import linspace as linspace
 
-from persistence import CornerPoint
-from persistence import PersistenceDiagram
+from src.persistence import CornerPoint
+from src.persistence import PersistenceDiagram
 
 import warnings
 warnings.simplefilter('ignore')

@@ -86,11 +86,6 @@ def local_max_size_feature(H):
             if i > 0 and is_e1_max:
                 r.add(e1)
     return r
-# # Old version, not optimized:
-# def max_size_feature(H):
-#     r = [edge for edge in H.edges
-#         if H.size(edge)>max([H.size(e) for e in H.edge_neighbors(edge)])]
-#     return r # set(r)
 
 def exclusivity_feature(H):
     """
