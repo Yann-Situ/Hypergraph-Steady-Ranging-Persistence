@@ -218,7 +218,7 @@ class HyperGraphFiltration:
                 t = self.time_range[int(i*(n-1.0)/(nb_plot-1.0))]
             sub_H = self.get_sub_hypergraph(t, dual=dual)
             draw_sub_hypergraph(sub_H, collapse = collapse, pos = pos, ax = self.ax_arr[i],
-                        title = '',#"t="+str(t),
+                        title = "t="+str(t),
                         with_node_labels = with_node_labels,
                         with_edge_labels = with_edge_labels,
                         edges_kwargs=edges_kwargs, nodes_kwargs=nodes_kwargs,

@@ -102,7 +102,7 @@ def exclusivity_feature(H):
 
 def strict_hyperhub_feature(H):
     """
-    Return the set of edges that have more neighbors than their neighbors.
+    Return the set of edges that have strictly more neighbors than their neighbors.
     """
     neighb = {}
     lens = {}
