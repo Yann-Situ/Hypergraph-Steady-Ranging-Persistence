@@ -1,31 +1,23 @@
-import matplotlib.pyplot as plt
 from src.hypergraph_filtration import HyperGraphFiltration
 import src.edge_features as feat
 
-from tqdm import tqdm
-from sys import getsizeof
+import matplotlib.pyplot as plt
+import sys
 import os.path
 
 try:
     import hypernetx as hnx
 except ImportError:
     print("HyperNetX not found")
-    #!pip install hypernetx --quiet 2> /dev/null
-    #print("Installation complete; please rerun this cell in order for the rest of the cells to use HyperNetX.")
+    print("Installation complete; please try to install HyperNetX (for instance with a command like `pip install hypernetx`).")
     exit()
 
-import warnings
-warnings.simplefilter('ignore')
+################################################################################
 
 # Take an edges.csv file and return a list of dictionary, each dictionary represent a hyperedge.
 # Note that this function was designed to work with the hyperbard dataset.
 # strings_to_erase is a list of strings that should be replaced by "" when reading the file
-def build_edgedict_from_file(filename, strings_to_erase = []):
-    if not os.path.exists(filename):
-        print("Error, file doesn't exists")
-        return None
-    file = open(filename, "r")
-
+def build_edgedict_from_hyperbard_file(file, strings_to_erase = []):
     # process first line
     keys = file.readline()[:-1].split(',')
     keys_n = len(keys)
@@ -49,7 +41,6 @@ def build_edgedict_from_file(filename, strings_to_erase = []):
             r.append(dict)
         else:
             print("Error, keys and objects doesn't have the same cardinal")
-    file.close()
     return r
 
 # Build a HyperGraphFiltration object from a list of dictionary (each representing a hyperedge).
@@ -71,74 +62,96 @@ def build_hypergraphfiltration_from_edgedict(edgedict, nodes_key, name_key = Non
             break
     return HyperGraphFiltration(hnx.Hypergraph(hypergraphdict, sort=False), node_weights, edge_weights, [0.0])
 
-def test_hypernet():
-    directory = "data/"
-    filename = "king-lear_hg-scene-mw.edges.csv"
-    # filename = "romeo-and-juliet_hg-scene-mw.edges.csv"
-    edgedict = build_edgedict_from_file(directory+filename,["_Lr", "_Rom"])
+def usage():
+    print("USAGE:")
+    print("python3 test_hyperbard.py filename")
+    print("----------------------------------")
+    print("filename is a `*.edges.csv` file from the Hyperbard dataset.")
+    print("This script opens a hyperbard file and build two hypergraph \
+filtrations: the scene-hypergraph and the character-hypergraph filtrations. \
+The script plots a sample of this two filtrations (for t=3,5,7,9).\n\
+Then the script computes four persistence diagrams for each filtrations:\n\
+    - the steady persistence for the hyperhub feature;\n\
+    - the ranging persistence for the hyperhub feature;\n\
+    - the steady(=ranging) persistence for the exclusivity feature;\n\
+    - the steady(=ranging) persistence for the max originality feature.")
+
+def test_hyperbard():
+    if len(sys.argv) < 2:
+        usage()
+        return None
+    
+    filename = sys.argv[1]
+    if not os.path.exists(filename):
+        print("Error, the file "+filename+" doesn't exists")
+        return None
+    file = open(filename, "r")
+    edgedict = build_edgedict_from_hyperbard_file(file, ["_Lr", "_Rom", "_Ham"])
+    file.close()
+    
     HGF = build_hypergraphfiltration_from_edgedict(edgedict,
         nodes_key = "onstage",
         name_key = None,
         weight_key = None)
-    # HGF = build_hypergraph_edge_filtration(size_file, edge_file, time_file, 10)
-
-    #print(HGF.time_range)
-    #compute_originality_values(H)
-    # HGF.compute_time_range_from_weights()
-    HGF.time_range = [5.0, 8.0]
-
-    #plt.subplots(figsize=(30,20))
-    # hnx.draw(HGF.H.collapse_nodes(), with_node_counts=True, with_edge_labels = True)
-    # hnx.draw(HGF.H.collapse_nodes_and_edges(), with_node_counts=True, with_edge_counts = True)
-    # hnx.draw(HGF.H, with_node_labels=True, with_edge_labels = True)
-    # HGF.plot_filtration(4, dual=True, with_node_labels = False, with_edge_labels = True)
-    # HGF.plot_filtration(4, with_node_labels = False, with_edge_labels = True)
-
-    HGF.plot_filtration(2, dual=False, with_node_labels = True, with_edge_labels = True)
+    
+    HGF.time_range = [3.0, 5.0, 7.0, 9.0] # arbitrary time values for the filtration plot
+    
+    ## plot scene-hypergraph
+    HGF.plot_filtration(4, dual=False, with_node_labels = True, with_edge_labels = True)
     plt.tight_layout()
-    HGF.time_range = [3.0, 5.0]
-    HGF.plot_filtration(2, dual=True, with_node_labels = True, with_edge_labels = True)
+    
+    ## plot character-hypergraph (dual of the first one)
+    HGF.plot_filtration(4, dual=True, with_node_labels = True, with_edge_labels = True)
     plt.tight_layout()
 
-    # plt.subplots(figsize=(30,20))
-    # hnx.draw(HGF.H.dual(), with_node_labels = True, with_edge_labels = True)
-
-    # plt.subplots(figsize=(30,20))
-    # hnx.draw(HGF.get_sub_hypergraph(7), with_node_labels=True, with_edge_labels = True)
-    # plt.subplots(figsize=(30,20))
-    # hnx.draw(HGF.get_sub_hypergraph(6), with_node_labels=True, with_edge_labels = True)
-    # plt.subplots(figsize=(30,20))
-    # hnx.draw(HGF.get_sub_hypergraph(7).dual(), with_node_labels=True, with_edge_labels = True)
-    # plt.subplots(figsize=(30,20))
-    # hnx.draw(HGF.get_sub_hypergraph(6).dual(), with_node_labels=True, with_edge_labels = True)
-
-
-    # fig1, ax_steady = plt.subplots(2,2)
-    # fig2, ax_ranging = plt.subplots(2,1)
-    # dual = True
-    #
-    # HGF.compute_feature_steady_persistence(feat.strict_hyperhub_feature, display_progress=True, dual = dual)
-    # HGF.compute_ranging_from_steady_persistence()
-    # ax_steady[0,0] = HGF.steady_pd.plot_gudhi(ax_steady[0,0], labeling=True, title="Steady hyperedge hub")
-    # ax_ranging[0] = HGF.ranging_pd.plot_gudhi(ax_ranging[0], labeling=True, title="Ranging hyperedge hub")
-    #
-    #
-    # HGF.compute_feature_steady_persistence(feat.exclusivity_feature, display_progress=True, dual = dual)
-    # ax_steady[1,0] = HGF.steady_pd.plot_gudhi(ax_steady[1,0], labeling=True, title="Exclusivity")
-    #
+    fig1, ax_scene = plt.subplots(2,2)
+    fig1.suptitle('Persistence of the scene-hypergraph', fontsize=16)
+    fig2, ax_character = plt.subplots(2,2)
+    fig2.suptitle('Persistence of the character-hypergraph', fontsize=16)
+    
+    HGF.compute_time_range_from_weights()
+    
+    ## Compute scene-hypergraph persistence
+    dual = False
+    HGF.compute_feature_steady_persistence(feat.strict_hyperhub_feature, display_progress=True, dual = dual)
+    HGF.compute_ranging_from_steady_persistence()
+    ax_scene[0,0] = HGF.steady_pd.plot_gudhi(ax_scene[0,0], labeling=True, title="Steady hyperedge hub")
+    ax_scene[0,1] = HGF.ranging_pd.plot_gudhi(ax_scene[0,1], labeling=True, title="Ranging hyperedge hub")
+    
+    HGF.compute_feature_steady_persistence(feat.exclusivity_feature, display_progress=True, dual = dual)
+    ax_scene[1,0] = HGF.steady_pd.plot_gudhi(ax_scene[1,0], labeling=True, title="Exclusivity")
+    
+    HGF.compute_feature_steady_persistence(feat.max_originality_feature, display_progress=True, dual = dual)
+    ax_scene[1,1] = HGF.steady_pd.plot_gudhi(ax_scene[1,1], labeling=True, title="Max originality")
+    
     # HGF.compute_feature_steady_persistence(feat.mean_originality_feature, display_progress=True, dual = dual)
     # HGF.compute_ranging_from_steady_persistence()
-    # ax_steady[0,1] = HGF.steady_pd.plot_gudhi(ax_steady[0,1], labeling=True, title="Steady mean originality")
-    # ax_ranging[1] = HGF.ranging_pd.plot_gudhi(ax_ranging[1], labeling=True, title="Ranging mean originality")
-    #
-    # HGF.compute_feature_steady_persistence(feat.max_originality_feature, display_progress=True, dual = dual)
-    # ax_steady[1,1] = HGF.steady_pd.plot_gudhi(ax_steady[1,1], labeling=True, title="Max originality")
-    #
-    # fig1.tight_layout()
-    # fig2.tight_layout()
+    # ax_scene[2,0] = HGF.steady_pd.plot_gudhi(ax_scene[2,0], labeling=True, title="Steady mean originality")
+    # ax_scene[2,1] = HGF.ranging_pd.plot_gudhi(ax_scene[2,1], labeling=True, title="Ranging mean originality")
+    
+    ## Compute character-hypergraph persistence
+    dual = True
+    HGF.compute_feature_steady_persistence(feat.strict_hyperhub_feature, display_progress=True, dual = dual)
+    HGF.compute_ranging_from_steady_persistence()
+    ax_character[0,0] = HGF.steady_pd.plot_gudhi(ax_character[0,0], labeling=True, title="Steady hyperedge hub")
+    ax_character[0,1] = HGF.ranging_pd.plot_gudhi(ax_character[0,1], labeling=True, title="Ranging hyperedge hub")
+    
+    HGF.compute_feature_steady_persistence(feat.exclusivity_feature, display_progress=True, dual = dual)
+    ax_character[1,0] = HGF.steady_pd.plot_gudhi(ax_character[1,0], labeling=True, title="Exclusivity")
+    
+    HGF.compute_feature_steady_persistence(feat.max_originality_feature, display_progress=True, dual = dual)
+    ax_character[1,1] = HGF.steady_pd.plot_gudhi(ax_character[1,1], labeling=True, title="Max originality")
+    
+    # HGF.compute_feature_steady_persistence(feat.mean_originality_feature, display_progress=True, dual = dual)
+    # HGF.compute_ranging_from_steady_persistence()
+    # ax_character[2,0] = HGF.steady_pd.plot_gudhi(ax_character[2,0], labeling=True, title="Steady mean originality")
+    # ax_character[2,1] = HGF.ranging_pd.plot_gudhi(ax_character[2,1], labeling=True, title="Ranging mean originality")
+    
+    fig1.tight_layout()
+    fig2.tight_layout()
     plt.show()
 
 ################################################################################
 
 if __name__ == "__main__":
-    test_hypernet()
+    test_hyperbard()
